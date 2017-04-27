@@ -18,22 +18,23 @@ for z = 1:100
 
     % Initialize global variables for threshold settings
     [sourceHeight, sourceWidth] = size(I);
-    scanLineCount = 9;
+    scanLineCount = 5;
     scanLineLength = ceil(sourceWidth/10);
+    scanLineBeginHeight = ceil(sourceHeight/4);
     thresholdMajorWeight = 0.75;
     thresholdMinorWeight = 0.25;
-    rowIncrement = 2/30*sourceHeight;
+    rowIncrement = 1/12*sourceHeight;
     leftThreshValue = zeros(scanLineCount,1);
     rightThreshValue = zeros(scanLineCount,1);
 
     % Calculate array of left and right threshold intensity values
     for i=1:scanLineCount
-        scanRow = sourceHeight - (rowIncrement*i);
+        scanRow = sourceHeight - (rowIncrement*(i-1)) - scanLineBeginHeight;
 
-        leftScanColumnMid = ceil((1/6*sourceWidth) + (rowIncrement*i*sourceWidth/2/sourceHeight));
+        leftScanColumnMid = ceil((7/24*sourceWidth) + (rowIncrement*(i-1)*sourceWidth/2/sourceHeight));
         leftThreshValue(i) = max(I(scanRow, leftScanColumnMid-(scanLineLength/2) : leftScanColumnMid+(scanLineLength/2)));
 
-        rightScanColumnMid = floor((5/6*sourceWidth) - (rowIncrement*i*sourceWidth/2/sourceHeight));
+        rightScanColumnMid = floor((17/24*sourceWidth) - (rowIncrement*(i-1)*sourceWidth/2/sourceHeight));
         rightThreshValue(i) = max(I(scanRow, rightScanColumnMid-(scanLineLength/2) : rightScanColumnMid+(scanLineLength/2)));
     end
 
@@ -45,7 +46,7 @@ for z = 1:100
     rightThreshold = thresholdMajorWeight*rightLaneIntensity + thresholdMinorWeight*leftLaneIntensity;
 
     % Initializing global variables for lane extraction
-    scanLineCount = ceil(17/30*sourceHeight);
+    scanLineCount = ceil(5/12*sourceHeight);
     scanLineLength = ceil(sourceWidth/10);
     leftLane = zeros(scanLineCount,2);
     rightLane = zeros(scanLineCount,2);
@@ -53,9 +54,9 @@ for z = 1:100
     % Identify points on the left and right lanes based on the calculated
     % threshold
     for i=1:scanLineCount
-        scanRow = sourceHeight - i;
+        scanRow = (3/4*sourceHeight) - (i-1);
         for j=0:scanLineLength
-            leftScanColumn = ceil((13/60*sourceWidth) + (i*sourceWidth/2/sourceHeight)) - j;
+            leftScanColumn = ceil((1/3*sourceWidth) + ((i-1)*sourceWidth/2/sourceHeight)) - j;
             if I(scanRow, leftScanColumn) > leftThreshold
                 break;
             end
@@ -63,7 +64,7 @@ for z = 1:100
         leftLane(i,:) = [leftScanColumn scanRow];
 
         for j=0:scanLineLength
-            rightScanColumn = floor((47/60*sourceWidth) - (i*sourceWidth/2/sourceHeight)) + j;
+            rightScanColumn = floor((2/3*sourceWidth) - ((i-1)*sourceWidth/2/sourceHeight)) + j;
             if I(scanRow, rightScanColumn) > rightThreshold
                 break;
             end
