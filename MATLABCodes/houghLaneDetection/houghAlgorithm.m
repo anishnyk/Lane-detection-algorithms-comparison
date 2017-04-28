@@ -47,8 +47,8 @@ function [leftRho, leftTheta, leftLane, leftHoughArray] = houghAlgorithm (z)
     % Initializing global variables for lane extraction
     scanLineCount = ceil(5/12*sourceHeight);
     scanLineLength = ceil(sourceWidth/10);
-    leftLane = zeros(scanLineCount,2);
-    rightLane = zeros(scanLineCount,2);
+    leftLane = zeros(ceil(2/3*sourceHeight),1);
+    rightLane = zeros(ceil(2/3*sourceHeight),1);
     
     % Identify points on the left and right lanes based on the calculated
     % threshold
@@ -60,7 +60,7 @@ function [leftRho, leftTheta, leftLane, leftHoughArray] = houghAlgorithm (z)
                 break;
             end
         end
-        leftLane(i,:) = [leftScanColumn scanRow];
+        leftLane(sourceHeight-scanRow) = leftScanColumn;
 
         for j=0:scanLineLength
             rightScanColumn = floor((2/3*sourceWidth) - ((i-1)*sourceWidth/2/sourceHeight)) + j;
@@ -68,63 +68,118 @@ function [leftRho, leftTheta, leftLane, leftHoughArray] = houghAlgorithm (z)
                 break;
             end
         end
-        rightLane(i,:) = [rightScanColumn scanRow];
+        rightLane(sourceHeight-scanRow) = rightScanColumn;
     end
     
     imshow(source);
-    line(leftLane(:,1),leftLane(:,2));
-    line(rightLane(:,1),rightLane(:,2));
+%     line(leftLane(:,1),leftLane(:,2));
+%     line(rightLane(:,1),rightLane(:,2));
     
-    % Populate the left and right hough matrices
-    [leftPoints, ~] = size(leftLane);
-    leftHoughArray = zeros(800,90);
-    for i=1:leftPoints
-        arr = houghTransform(leftLane(i,1), leftLane(i,2));
-        leftHoughArray = leftHoughArray + arr;
-    end
+    % Initializing variables for Hough transform in horizontal slots
+    scanLineCount = 5;
+    scanLineBeginHeight = ceil(sourceHeight/4);
+    rowIncrement = 1/12*sourceHeight;
     
-    [rightPoints, ~] = size(rightLane);
-    rightHoughArray = zeros(800,90);
-    for i=1:rightPoints
-        arr = houghTransform(sourceWidth-rightLane(i,1), rightLane(i,2));
-        rightHoughArray = rightHoughArray + arr;
-    end
-   
-    % Identify the maximum occuring rho and delta values for left and right
-    % lanes
-    [colMax, rowIndex] = max(leftHoughArray);
-    leftMax = max(colMax);
-    k=1;
-    for i=1:length(colMax)
-        if colMax(i) == leftMax;
-            leftRho(k) = rowIndex(i);
-            leftTheta(k) = i;
-            k=k+1;
+    for i=1:scanLineCount
+        beginRow = scanLineBeginHeight + (i-1)*rowIncrement;
+        endRow = beginRow + rowIncrement;
+        
+        leftHoughArray = zeros(800,90);
+        for k=beginRow:endRow
+            arr = houghTransform(leftLane(k), k);
+            leftHoughArray = leftHoughArray + arr;
         end
-    end
-    
-    [colMax, rowIndex] = max(rightHoughArray);
-    rightMax = max(colMax);
-    k=1;
-    for i=1:length(colMax)
-        if colMax(i) == rightMax;
-            rightRho(k) = rowIndex(i);
-            rightTheta(k) = i;
-            k=k+1;
+        rightHoughArray = zeros(800,90);
+        for k=beginRow:endRow
+            arr = houghTransform(leftLane(k), k);
+            rightHoughArray = rightHoughArray + arr;
         end
-    end
-    
-    % Display the left and right lanes
-    for i=1:length(leftRho)
-        leftLanes = reverseHoughTransform(leftRho(i),leftTheta(i), sourceWidth, sourceHeight);
+        
+        [colMax, rowIndex] = max(leftHoughArray);
+        leftMax = max(colMax);
+        k=1;
+        for j=1:length(colMax)
+            if colMax(j) == leftMax;
+                leftRho(k) = rowIndex(j);
+                leftTheta(k) = j;
+                k=k+1;
+            end
+        end
+        leftRhoFinal = median(leftRho);
+        leftThetaFinal = median(leftTheta);
+        
+        [colMax, rowIndex] = max(rightHoughArray);
+        rightMax = max(colMax);
+        k=1;
+        for j=1:length(colMax)
+            if colMax(j) == rightMax;
+                rightRho(k) = rowIndex(j);
+                rightTheta(k) = j;
+                k=k+1;
+            end
+        end
+        rightRhoFinal = median(rightRho);
+        rightThetaFinal = median(rightTheta);
+        
+        % Display the left and right lanes
+        leftLanes = reverseHoughTransform(leftRhoFinal,leftThetaFinal, sourceWidth, sourceHeight, beginRow);
         line(leftLanes(:,1), leftLanes(:,2));
-        pause(0.25);
-    end
-    
-    for i=1:length(rightRho)
-        rightLanes = reverseHoughTransform(rightRho(i),rightTheta(i), sourceWidth, sourceHeight);
+        rightLanes = reverseHoughTransform(rightRhoFinal,rightThetaFinal, sourceWidth, sourceHeight, beginRow);
         line(sourceWidth-rightLanes(:,1), rightLanes(:,2));
-        pause(0.25);
+        pause(0.1);
     end
+        
+    
+%     % Populate the left and right hough matrices
+%     [leftPoints, ~] = size(leftLane);
+%     leftHoughArray = zeros(800,90);
+%     for i=1:leftPoints
+%         arr = houghTransform(leftLane(i,1), leftLane(i,2));
+%         leftHoughArray = leftHoughArray + arr;
+%     end
+%     
+%     [rightPoints, ~] = size(rightLane);
+%     rightHoughArray = zeros(800,90);
+%     for i=1:rightPoints
+%         arr = houghTransform(sourceWidth-rightLane(i,1), rightLane(i,2));
+%         rightHoughArray = rightHoughArray + arr;
+%     end
+%    
+%     % Identify the maximum occuring rho and delta values for left and right
+%     % lanes
+%     [colMax, rowIndex] = max(leftHoughArray);
+%     leftMax = max(colMax);
+%     k=1;
+%     for i=1:length(colMax)
+%         if colMax(i) == leftMax;
+%             leftRho(k) = rowIndex(i);
+%             leftTheta(k) = i;
+%             k=k+1;
+%         end
+%     end
+%     
+%     [colMax, rowIndex] = max(rightHoughArray);
+%     rightMax = max(colMax);
+%     k=1;
+%     for i=1:length(colMax)
+%         if colMax(i) == rightMax;
+%             rightRho(k) = rowIndex(i);
+%             rightTheta(k) = i;
+%             k=k+1;
+%         end
+%     end
+%     
+%     % Display the left and right lanes
+%     for i=1:length(leftRho)
+%         leftLanes = reverseHoughTransform(leftRho(i),leftTheta(i), sourceWidth, sourceHeight);
+%         line(leftLanes(:,1), leftLanes(:,2));
+%         pause(0.25);
+%     end
+%     
+%     for i=1:length(rightRho)
+%         rightLanes = reverseHoughTransform(rightRho(i),rightTheta(i), sourceWidth, sourceHeight);
+%         line(sourceWidth-rightLanes(:,1), rightLanes(:,2));
+%         pause(0.25);
+%     end
     
 end
