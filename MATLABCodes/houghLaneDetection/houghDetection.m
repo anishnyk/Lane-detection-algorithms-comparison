@@ -1,7 +1,5 @@
 function houghDetection (iter)
 
-leftLanes = zeros(iter, 2);
-rightLanes = zeros(iter, 2);
 for z = 1:iter
     % Import the source image and convert to grayscale
     if z<10
@@ -13,10 +11,6 @@ for z = 1:iter
     end
     source = imread(filePath);
     I = rgb2gray(source);
-
-%     % if imported correctly, display image
-%     colormap(gray(256));
-%     image(I);
 
     % Initialize global variables for threshold settings
     [sourceHeight, sourceWidth] = size(I);
@@ -50,8 +44,8 @@ for z = 1:iter
     % Initializing global variables for lane extraction
     scanLineCount = ceil(5/12*sourceHeight);
     scanLineLength = ceil(sourceWidth/10);
-    leftLane = zeros(scanLineCount,2);
-    rightLane = zeros(scanLineCount,2);
+    leftLane = zeros(scanLineCount,1);
+    rightLane = zeros(scanLineCount,1);
     
     % Identify points on the left and right lanes based on the calculated
     % threshold
@@ -63,7 +57,7 @@ for z = 1:iter
                 break;
             end
         end
-        leftLane(i,:) = [leftScanColumn scanRow];
+        leftLane(i,1) = leftScanColumn;
 
         for j=0:scanLineLength
             rightScanColumn = floor((2/3*sourceWidth) - ((i-1)*sourceWidth/2/sourceHeight)) + j;
@@ -71,7 +65,7 @@ for z = 1:iter
                 break;
             end
         end
-        rightLane(i,:) = [rightScanColumn scanRow];
+        rightLane(i,1) = rightScanColumn;
     end
     
     imshow(source);
@@ -79,17 +73,15 @@ for z = 1:iter
 %     line(rightLane(:,1),rightLane(:,2));
     
     % Populate the left and right hough matrices
-    [leftPoints, ~] = size(leftLane);
-    leftHoughArray = zeros(800,90);
-    for i=1:leftPoints
-        arr = houghTransform(leftLane(i,1), leftLane(i,2));
+    leftHoughArray = zeros(200,31);
+    for i=1:scanLineCount
+        arr = houghTransform(leftLane(i,1), (3/4*sourceHeight) - (i-1));
         leftHoughArray = leftHoughArray + arr;
     end
     
-    [rightPoints, ~] = size(rightLane);
-    rightHoughArray = zeros(800,90);
-    for i=1:rightPoints
-        arr = houghTransform(sourceWidth-rightLane(i,1), rightLane(i,2));
+    rightHoughArray = zeros(200,31);
+    for i=1:scanLineCount
+        arr = houghTransform(sourceWidth-rightLane(i,1), (3/4*sourceHeight) - (i-1));
         rightHoughArray = rightHoughArray + arr;
     end
    
@@ -100,8 +92,8 @@ for z = 1:iter
     k=1;
     for i=1:length(colMax)
         if colMax(i) == leftMax;
-            leftRho(k) = rowIndex(i);
-            leftTheta(k) = i;
+            leftRhoArr(k) = (rowIndex(i)-1)*3;
+            leftThetaArr(k) = (i-1)*3;
             k=k+1;
         end
     end
@@ -111,23 +103,24 @@ for z = 1:iter
     k=1;
     for i=1:length(colMax)
         if colMax(i) == rightMax;
-            rightRho(k) = rowIndex(i);
-            rightTheta(k) = i;
+            rightRhoArr(k) = (rowIndex(i)-1)*3;
+            rightThetaArr(k) = (i-1)*3;
             k=k+1;
         end
     end
+    leftRho = median(leftRhoArr);
+    leftTheta = median(leftThetaArr);
+    rightRho = median(rightRhoArr);
+    rightTheta = median(rightThetaArr);
     
     % Display the left and right lanes
-    for i=1:length(leftRho)
-        leftLanes(z,:) = reverseHoughTransform(leftRho(i),leftTheta(i), sourceWidth, sourceHeight, leftLanes);
-        line(leftLanes(:,1), leftLanes(:,2));
-        pause(0.25);
-    end
-    for i=1:length(rightRho)
-        rightLanes(z,:) = reverseHoughTransform(rightRho(i),rightTheta(i), sourceWidth, sourceHeight, rightLanes);
-        line(sourceWidth-rightLanes(:,1), rightLanes(:,2));
-        pause(0.25);
-    end
+    leftLanes = reverseHoughTransform(leftRho,leftTheta, sourceWidth, ceil(sourceHeight/4), ceil(2/3*sourceHeight));
+    line(leftLanes(:,1), leftLanes(:,2), 'LineStyle','none','Marker','.');
+    pause(0.25);
+    
+    rightLanes = reverseHoughTransform(rightRho,rightTheta, sourceWidth, ceil(sourceHeight/4), ceil(2/3*sourceHeight));
+    line(sourceWidth-rightLanes(:,1), rightLanes(:,2), 'LineStyle','none','Marker','.');
+    pause(0.25);
     
 end
 
