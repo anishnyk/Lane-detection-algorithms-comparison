@@ -78,7 +78,6 @@ for z = 1:100
     line(rightLane(:,1), rightLane(:,2));
     pause(0.25);
     
-    
 end
 
 end

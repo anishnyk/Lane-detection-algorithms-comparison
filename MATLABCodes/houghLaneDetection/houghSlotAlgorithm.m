@@ -1,7 +1,6 @@
-function houghSlotDetection( iter )
+function [ leftHoughArray, leftRho, leftTheta, leftLanes, beginRow] = houghSlotAlgorithm( z )
 
-for z = 1:iter
-    % Import the source image and convert to grayscale
+% Import the source image and convert to grayscale
     if z<10
         filePath = strcat('../../../Assets/RoadMarkingDataset/roadmark_000', num2str(z), '.jpg');
     elseif z<100
@@ -135,5 +134,6 @@ for z = 1:iter
         line(sourceWidth-rightLanes(:,1), rightLanes(:,2),'LineStyle','none','Marker','.');
         pause(0.1);
     end
+    
 end
 
