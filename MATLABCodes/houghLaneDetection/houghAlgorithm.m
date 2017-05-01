@@ -51,7 +51,7 @@ function [leftRho, leftTheta, leftLane, leftHoughArray] = houghAlgorithm (z)
     for i=1:scanLineCount
         scanRow = (3/4*sourceHeight) - (i-1);
         for j=0:scanLineLength
-            leftScanColumn = ceil((1/3*sourceWidth) + ((i-1)*sourceWidth/2/sourceHeight)) - j;
+            leftScanColumn = ceil((1/6*sourceWidth) + ((i-1)*sourceWidth/2/sourceHeight)) - j;
             if I(scanRow, leftScanColumn) > leftThreshold
                 break;
             end
@@ -59,7 +59,7 @@ function [leftRho, leftTheta, leftLane, leftHoughArray] = houghAlgorithm (z)
         leftLane(i,1) = leftScanColumn;
 
         for j=0:scanLineLength
-            rightScanColumn = floor((2/3*sourceWidth) - ((i-1)*sourceWidth/2/sourceHeight)) + j;
+            rightScanColumn = floor((5/6*sourceWidth) - ((i-1)*sourceWidth/2/sourceHeight)) + j;
             if I(scanRow, rightScanColumn) > rightThreshold
                 break;
             end
